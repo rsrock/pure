@@ -63,6 +63,7 @@ prompt_pure_clear_screen() {
 
 prompt_pure_set_title() {
 	# emacs terminal does not support settings the title
+        [[ ${TERM} == eterm-color ]] && return
 	(( ${+EMACS} )) && return
 
 	# tell the terminal we are setting the title
@@ -116,17 +117,18 @@ prompt_pure_preprompt_render() {
 	[[ -n ${prompt_pure_cmd_timestamp+x} && "$1" != "precmd" ]] && return
 
 	# set color for git branch/dirty status, change color if dirty checking has been delayed
-	local git_color=242
+	local git_color=green
 	[[ -n ${prompt_pure_git_last_dirty_check_timestamp+x} ]] && git_color=red
 
-	# construct preprompt, beginning with path
-	local preprompt="%F{blue}%~%f"
+	# construct preprompt, beginning with user, machine, and path
+	# username and machine if applicable
+	local preprompt=$prompt_pure_username
+        # path
+	preprompt+="in %F{blue}%~%f"
 	# git info
 	preprompt+="%F{$git_color}${vcs_info_msg_0_}${prompt_pure_git_dirty}%f"
 	# git pull/push arrows
 	preprompt+="%F{cyan}${prompt_pure_git_arrows}%f"
-	# username and machine if applicable
-	preprompt+=$prompt_pure_username
 	# execution time
 	preprompt+="%F{yellow}${prompt_pure_cmd_exec_time}%f"
 
@@ -423,14 +425,21 @@ prompt_pure_setup() {
 		zle -N clear-screen prompt_pure_clear_screen
 	fi
 
-	# show username@host if logged in through SSH
-	[[ "$SSH_CONNECTION" != '' ]] && prompt_pure_username=' %F{242}%n@%m%f'
-
-	# show username@host if root, with username in white
-	[[ $UID -eq 0 ]] && prompt_pure_username=' %F{white}%n%f%F{242}@%m%f'
+	# show username and host
+        # Make first two elements cyan, unless something is unusual
+        if [[ "$USER" == 'rradmin' ]]; then
+            prompt_pure_username='%F{red}%n%f '
+        else
+            prompt_pure_username='%F{cyan}%n%f '
+        fi
+        if [[ $HOST == 'Alcatraz' || $HOST == 'Alcatraz.local' ]]; then
+            prompt_pure_username+='at %F{cyan}%m%f '
+        else
+            prompt_pure_username+='at %F{yellow}%m%f '
+        fi
 
 	# prompt turns red if the previous command didn't exit with 0
-	PROMPT='%(?.%F{magenta}.%F{red})${PURE_PROMPT_SYMBOL:-❯}%f '
+	PROMPT='%(?.%F{blue}.%F{red})${PURE_PROMPT_SYMBOL:->}%f '
 }
 
 prompt_pure_setup "$@"
