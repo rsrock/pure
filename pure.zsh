@@ -388,6 +388,7 @@ prompt_pure_async_callback() {
 }
 
 prompt_pure_setup() {
+        export RPROMPT=''
 	# prevent percentage showing up
 	# if output doesn't end with a newline
 	export PROMPT_EOL_MARK=''
